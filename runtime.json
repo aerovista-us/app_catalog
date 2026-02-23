@@ -1,0 +1,330 @@
+{
+  "captured_date": "2026-01-10",
+  "host": "nxcore",
+  "tailscale_ip": "100.115.9.61",
+  "compose_stacks": [
+    {
+      "name": "calendar",
+      "running": 2,
+      "compose_files": [
+        "/srv/Collab/av-share/calendar/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "frountend",
+      "running": 1,
+      "compose_files": [
+        "/srv/Collab/av-share/calendar/frountend/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "app",
+      "running": 1,
+      "compose_files": [
+        "/srv/Collab/mini.shops/agreement/app/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "aerovista-command-center",
+      "running": 1,
+      "compose_files": [
+        "/srv/ACOS/aerovista-command-center/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "aerovista",
+      "running": 1,
+      "compose_files": [
+        "/srv/ACOS/aerovista/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "aerocaller",
+      "running": 1,
+      "compose_files": [
+        "/srv/ACOS/Apps/aerocaller/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "echoverse_music_catalog",
+      "running": 2,
+      "compose_files": [
+        "/srv/NXDrive/EchoVerse/EchoVerse_Music_Catalog/docker-compose.yml"
+      ]
+    },
+    {
+      "name": "whisper_worker",
+      "running": 1,
+      "compose_files": [
+        "/srv/NXDrive/echoverse/EchoVerse_Music_Catalog/whisper_worker/docker-compose.nxcore.dev.yml"
+      ]
+    },
+    {
+      "name": "docker",
+      "running": 2,
+      "compose_files": [
+        "/srv/ACOS/NXCore-Control/docker/compose-openwebui.yml",
+        "/srv/ACOS/NXCore-Control/docker/compose-redis.yml"
+      ]
+    },
+    {
+      "name": "core",
+      "running": 3,
+      "compose_files": [
+        "/srv/core/compose-n8n.yml"
+      ]
+    },
+    {
+      "name": "dns",
+      "running": 1,
+      "compose_files": [
+        "/srv/dns/compose-dns.yml"
+      ]
+    },
+    {
+      "name": "nxtraefik",
+      "running": 1,
+      "compose_files": [
+        "/srv/core/compose-traefik.yml"
+      ]
+    },
+    {
+      "name": "nxportainer",
+      "running": 1,
+      "compose_files": [
+        "/srv/core/compose-portainer.yml"
+      ]
+    },
+    {
+      "name": "browser-workspaces",
+      "running": 8,
+      "compose_files": [
+        "/srv/browser-workspaces/docker-compose.guac.yml",
+        "/srv/core/compose-browser-workspaces.yml"
+      ]
+    },
+    {
+      "name": "autoheal",
+      "running": 1,
+      "compose_files": [
+        "/srv/autoheal/compose.yml"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "name": "NXCal API",
+      "kind": "api",
+      "stack": "calendar",
+      "container": "nxcal-api",
+      "port_host": 5208,
+      "port_container": 8000,
+      "url": "http://100.115.9.61:5208",
+      "health": "http://100.115.9.61:5208/health"
+    },
+    {
+      "name": "NXCal UI",
+      "kind": "ui",
+      "stack": "calendar",
+      "container": "nxcal-ui",
+      "port_host": 5209,
+      "port_container": 80,
+      "url": "http://100.115.9.61:5209"
+    },
+    {
+      "name": "OA Frontend",
+      "kind": "ui",
+      "stack": "frountend",
+      "container": "oa-frontend",
+      "port_host": 4100,
+      "port_container": 4100,
+      "url": "http://100.115.9.61:4100"
+    },
+    {
+      "name": "Agreement Server",
+      "kind": "api",
+      "stack": "app",
+      "container": "agreement",
+      "port_host": 8099,
+      "port_container": 8080,
+      "url": "http://100.115.9.61:8099"
+    },
+    {
+      "name": "AVCC",
+      "kind": "ui+api",
+      "stack": "aerovista-command-center",
+      "container": "aerovista-command-center",
+      "port_host": 3001,
+      "port_container": 3001,
+      "url": "http://100.115.9.61:3001",
+      "health": "http://100.115.9.61:3001/api/health"
+    },
+    {
+      "name": "AeroVista API (Reports/Intake)",
+      "kind": "api",
+      "stack": "aerovista",
+      "container": "aerovista-api",
+      "port_host": 5001,
+      "port_container": 5000,
+      "url": "http://100.115.9.61:5001",
+      "health": "http://100.115.9.61:5001/api/health"
+    },
+    {
+      "name": "AeroCaller",
+      "kind": "service",
+      "stack": "aerocaller",
+      "container": "aerocaller",
+      "port_host": 4443,
+      "port_container": 8443,
+      "url": "https://100.115.9.61:4443"
+    },
+    {
+      "name": "EchoVerse Catalog",
+      "kind": "api",
+      "stack": "echoverse_music_catalog",
+      "container": "echoverse-catalog",
+      "port_host": 5300,
+      "port_container": 5300,
+      "url": "http://100.115.9.61:5300"
+    },
+    {
+      "name": "EchoVerse Catalog v3",
+      "kind": "api",
+      "stack": "echoverse_music_catalog",
+      "container": "echoverse-catalog-v3",
+      "port_host": 5302,
+      "port_container": 5302,
+      "url": "http://100.115.9.61:5302"
+    },
+    {
+      "name": "Work Orders UI",
+      "kind": "ui",
+      "stack": "(unknown)",
+      "container": "av-wo-ui",
+      "port_host": 8090,
+      "port_container": 80,
+      "url": "http://100.115.9.61:8090"
+    },
+    {
+      "name": "Work Orders Processor",
+      "kind": "worker",
+      "stack": "(unknown)",
+      "container": "av-wo-processor-fixed"
+    },
+    {
+      "name": "Whisper Worker",
+      "kind": "worker",
+      "stack": "whisper_worker",
+      "container": "whisper_worker"
+    },
+    {
+      "name": "Ollama",
+      "kind": "ai",
+      "stack": "(unknown)",
+      "container": "ollama",
+      "port_host": 11434,
+      "port_container": 11434,
+      "url": "http://100.115.9.61:11434"
+    },
+    {
+      "name": "Traefik",
+      "kind": "edge",
+      "stack": "nxtraefik",
+      "container": "nxtraefik-traefik-1",
+      "ports": [
+        80,
+        443,
+        8083
+      ],
+      "url": "http://100.115.9.61:8083"
+    },
+    {
+      "name": "Portainer",
+      "kind": "ops",
+      "stack": "nxportainer",
+      "container": "nxportainer-portainer-1",
+      "port_host": 9444,
+      "port_container": 9443,
+      "url": "https://100.115.9.61:9444"
+    },
+    {
+      "name": "CoreDNS",
+      "kind": "dns",
+      "stack": "dns",
+      "container": "nx-dns",
+      "port_host": 53,
+      "port_container": 53
+    },
+    {
+      "name": "Redis (host-local)",
+      "kind": "cache",
+      "stack": "docker",
+      "container": "redis",
+      "port_host": 6379,
+      "bind": "127.0.0.1"
+    },
+    {
+      "name": "Guacamole",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "browser-workspaces-guacamole-1",
+      "port_host": 8080,
+      "port_container": 8080,
+      "url": "http://100.115.9.61:8080"
+    },
+    {
+      "name": "noVNC",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "novnc",
+      "port_host": 6080,
+      "port_container": 8080,
+      "url": "http://100.115.9.61:6080"
+    },
+    {
+      "name": "Code Server",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "browser-workspaces-code-server-1",
+      "port_host": 8443,
+      "port_container": 8080,
+      "url": "http://100.115.9.61:8443"
+    },
+    {
+      "name": "Jupyter",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "jupyter",
+      "port_host": 8888,
+      "port_container": 8888,
+      "url": "http://100.115.9.61:8888"
+    },
+    {
+      "name": "RStudio",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "rstudio",
+      "port_host": 8787,
+      "port_container": 8787,
+      "url": "http://100.115.9.61:8787"
+    },
+    {
+      "name": "VNC Server",
+      "kind": "workspace",
+      "stack": "browser-workspaces",
+      "container": "browser-workspaces-vnc-server-1",
+      "ports": [
+        5901,
+        6901
+      ]
+    }
+  ],
+  "host_services": [
+    {
+      "name": "App Catalog (dev server)",
+      "port": 8000,
+      "cmd": "python3 -m http.server 8000 --bind 0.0.0.0",
+      "note": "temporary; will be containerized"
+    }
+  ]
+}

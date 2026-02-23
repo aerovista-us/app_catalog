@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AeroVista App Catalog</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b0f14; --panel:#111826; --muted:#8aa0b6; --text:#e7eef7; --chip:#1b2636; --line:#1f2a3a; --good:#5ef29a; --warn:#ffcc66; }
+    body { margin:0; font-family: system-ui, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); }
+    header { padding:16px 18px 10px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); z-index:10; }
+    h1 { margin:0; font-size:18px; letter-spacing:.3px; }
+    .tabs { display:flex; gap:8px; margin-top:10px; }
+    .tab { padding:8px 10px; border:1px solid var(--line); background:var(--panel); border-radius:12px; cursor:pointer; color:var(--muted); }
+    .tab.active { color: var(--text); border-color:#2a3b55; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:10px; }
+    input, select, button, label { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+    input { min-width: 260px; flex: 1; }
+    button { cursor:pointer; }
+    button:hover { border-color:#2a3b55; }
+    main { padding:16px 18px 40px; }
+    .meta { color:var(--muted); font-size:12px; margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .toggle { display:flex; gap:8px; align-items:center; }
+    .toggle input { width:18px; height:18px; padding:0; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .chip { background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:12px; margin-top:14px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+    .title { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .name { font-weight:650; }
+    .badge { font-size:11px; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background: #0e1522; color: var(--muted); white-space:nowrap; }
+    .dupe { color: var(--warn); border-color: rgba(255,204,102,.35); }
+    .live { color: var(--good); border-color: rgba(94,242,154,.35); }
+    .kv { margin-top:8px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:10px; }
+    .desc { margin-top:10px; font-size:13px; color:#cfe0f2; line-height:1.35; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .linkbtn { font-size:12px; padding:8px 10px; border-radius:12px; text-decoration:none; display:inline-block; }
+    .small { font-size:11px; color:var(--muted); margin-top:10px; }
+    details { margin-top: 10px; }
+    summary { cursor:pointer; color: var(--muted); }
+    pre { white-space: pre-wrap; word-break: break-word; background:#0e1522; padding:10px; border:1px solid var(--line); border-radius:12px; margin-top:8px; color:#cfe0f2; }
+    table { width:100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border-bottom:1px solid var(--line); padding:10px; text-align:left; font-size:12px; color:var(--muted); vertical-align: top; }
+    th { color: var(--text); font-size:12px; }
+    code { color:#cfe0f2; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>App Catalog</h1>
+  <div class="tabs">
+    <button class="tab active" id="tabCatalog">Catalog</button>
+    <button class="tab" id="tabRuntime">NXCore Runtime</button>
+  </div>
+
+  <div id="catalogControls">
+    <div class="row">
+      <input id="q" placeholder="Search name, tags, stack, notes…" />
+      <select id="status"></select>
+      <select id="domain"></select>
+      <select id="runmode"></select>
+      <select id="sort">
+        <option value="name_asc">Sort: Name (A→Z)</option>
+        <option value="status_asc">Sort: Status</option>
+        <option value="domain_asc">Sort: Domain</option>
+        <option value="confidence_desc">Sort: Confidence (high→low)</option>
+        <option value="last_verified_desc">Sort: Last Verified (new→old)</option>
+      </select>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="meta">
+      <span id="meta">Loading…</span>
+      <span class="toggle"><input id="dupesOnly" type="checkbox" /><label for="dupesOnly">Duplicates only</label></span>
+      <span class="toggle"><input id="hideDupes" type="checkbox" /><label for="hideDupes">Hide duplicates</label></span>
+      <span class="toggle"><input id="onlyActive" type="checkbox" /><label for="onlyActive">Only Active (runtime)</label></span>
+    </div>
+  </div>
+
+  <div id="runtimeControls" style="display:none;">
+    <div class="meta" id="runtimeMeta">Loading runtime…</div>
+  </div>
+</header>
+
+<main>
+  <div id="catalogView">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="runtimeView" style="display:none;">
+    <h2 style="margin:0; font-size:16px;">NXCore Runtime Snapshot</h2>
+    <div class="small" id="runtimeSubtitle"></div>
+
+    <h3 style="margin-top:16px; font-size:14px;">Services</h3>
+    <div id="runtimeServices"></div>
+
+    <h3 style="margin-top:18px; font-size:14px;">Compose Stacks</h3>
+    <div id="runtimeStacks"></div>
+
+    <h3 style="margin-top:18px; font-size:14px;">Host Services</h3>
+    <div id="runtimeHost"></div>
+  </div>
+</main>
+
+<script>
+  const el = (id) => document.getElementById(id);
+  const grid = el("grid");
+
+  const state = {
+    apps: [],
+    runtime: null,
+    q: "",
+    status: "All",
+    domain: "All",
+    runmode: "All",
+    sort: "name_asc",
+    dupesOnly: false,
+    hideDupes: false,
+    onlyActive: false
+  };
+
+  const uniq = (arr) => ["All", ...Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
+  const escapeHtml = (s="") => String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  const setOptions = (selectEl, values) => { selectEl.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(""); };
+
+  function matches(app) {
+    const q = state.q.trim().toLowerCase();
+
+    if (state.dupesOnly && !app.duplicates?.group) return false;
+    if (state.hideDupes && app.duplicates?.is_duplicate) return false;
+    if (state.onlyActive && app.status !== "Active") return false;
+
+    if (state.status !== "All" && app.status !== state.status) return false;
+    if (state.domain !== "All" && app.domain !== state.domain) return false;
+    if (state.runmode !== "All" && app.run_mode !== state.runmode) return false;
+
+    if (!q) return true;
+
+    const hay = [
+      app.id, app.name, app.domain, app.status, app.run_mode,
+      (app.stack || []).join(" "),
+      (app.tags || []).join(" "),
+      app.path, (app.urls || []).join(" "),
+      app.repo, app.notes,
+      app.duplicates?.group,
+      app.duplicates?.canonical_id,
+      app.access?.open_url,
+      app.access?.traefik_route,
+      app.lineage?.merged_into,
+      (app.lineage?.replaced_by || []).join(" "),
+      (app.lineage?.replaces || []).join(" ")
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return hay.includes(q);
+  }
+
+  const toTime = (d) => d ? new Date(d).getTime() : 0;
+
+  function sortApps(list) {
+    const key = state.sort;
+    if (key === "confidence_desc") return [...list].sort((a,b)=>(b.confidence||0)-(a.confidence||0) || (a.name||"").localeCompare(b.name||""));
+    if (key === "domain_asc") return [...list].sort((a,b)=>(a.domain||"").localeCompare(b.domain||"") || (a.name||"").localeCompare(b.name||""));
+    if (key === "status_asc") return [...list].sort((a,b)=>(a.status||"").localeCompare(b.status||"") || (a.name||"").localeCompare(b.name||""));
+    if (key === "last_verified_desc") return [...list].sort((a,b)=>toTime(b.last_verified)-toTime(a.last_verified) || (a.name||"").localeCompare(b.name||""));
+    return [...list].sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  }
+
+  async function copy(text) { try { await navigator.clipboard.writeText(text); } catch {} }
+  const pill = (text)=> `<span class="chip">${escapeHtml(text)}</span>`;
+
+  function card(app) {
+    const urls = (app.urls || []).filter(Boolean);
+    const tags = (app.tags || []).filter(Boolean);
+    const stack = (app.stack || []).filter(Boolean);
+    const lineage = app.lineage || {};
+    const dup = app.duplicates || {};
+
+    const lineageBits = [
+      dup.group ? `Duplicate group: ${dup.group}` : "",
+      dup.group && dup.canonical_id ? `Canonical: ${dup.canonical_id}` : "",
+      lineage.merged_into ? `Merged → ${lineage.merged_into}` : "",
+      (lineage.replaced_by && lineage.replaced_by.length) ? `Replaced by: ${lineage.replaced_by.join(", ")}` : "",
+      (lineage.replaces && lineage.replaces.length) ? `Replaces: ${lineage.replaces.join(", ")}` : ""
+    ].filter(Boolean).join(" • ");
+
+    const badges = [];
+    if (app.status === "Active") badges.push(`<span class="badge live">Active</span>`);
+    if (dup.group) badges.push(`<span class="badge dupe">${dup.is_duplicate ? "Duplicate" : "Duplicate (canonical)"}</span>`);
+    badges.push(`<span class="badge">Confidence: ${escapeHtml(app.confidence ?? "—")}</span>`);
+
+    return `
+      <div class="card">
+        <div class="title">
+          <div>
+            <div class="name">${escapeHtml(app.name || "(unnamed)")} <span class="small">${escapeHtml(app.id || "")}</span></div>
+            <div class="kv">
+              <span>Domain: ${escapeHtml(app.domain || "—")}</span>
+              <span>Status: ${escapeHtml(app.status || "—")}</span>
+              <span>Run: ${escapeHtml(app.run_mode || "—")}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+            ${badges.join("")}
+          </div>
+        </div>
+
+        <div class="desc">${escapeHtml(app.notes || "—")}</div>
+
+        <div class="small">
+          ${app.access?.open_url ? `Open: <code>${escapeHtml(app.access.open_url)}</code><br/>` : ""}
+          ${app.access?.health_url ? `Health: <code>${escapeHtml(app.access.health_url)}</code><br/>` : ""}
+          ${app.path ? `📁 ${escapeHtml(app.path)}` : ""}
+        </div>
+
+        ${lineageBits ? `<div class="small">🧬 ${escapeHtml(lineageBits)}</div>` : ""}
+
+        <div class="chips">
+          ${stack.map(pill).join("")}
+          ${tags.map(pill).join("")}
+        </div>
+
+        <div class="actions">
+          ${app.path ? `<button class="linkbtn" data-copy="${escapeHtml(app.path)}">Copy Path</button>` : ""}
+          ${app.access?.open_url ? `<a class="linkbtn" href="${escapeHtml(app.access.open_url)}" target="_blank" rel="noreferrer">Open URL</a>` : (urls[0] ? `<a class="linkbtn" href="${escapeHtml(urls[0])}" target="_blank" rel="noreferrer">Open URL</a>` : "")}
+          ${app.repo ? `<a class="linkbtn" href="${escapeHtml(app.repo)}" target="_blank" rel="noreferrer">Open Repo</a>` : ""}
+        </div>
+
+        <details>
+          <summary>Show raw JSON</summary>
+          <pre>${escapeHtml(JSON.stringify(app, null, 2))}</pre>
+        </details>
+      </div>
+    `;
+  }
+
+  function renderCatalog() {
+    const filtered = sortApps(state.apps.filter(matches));
+    const dupGroups = new Set(state.apps.filter(a=>a.duplicates?.group).map(a=>a.duplicates.group)).size;
+    const dupEntries = state.apps.filter(a=>a.duplicates?.group).length;
+    const dupOnly = state.apps.filter(a=>a.duplicates?.is_duplicate).length;
+    const active = state.apps.filter(a=>a.status==="Active").length;
+
+    el("meta").textContent = `${filtered.length} shown • ${state.apps.length} total • ${active} active • ${dupGroups} dupe groups • ${dupEntries} in dupes (${dupOnly} duplicates)`;
+    grid.innerHTML = filtered.map(card).join("");
+    grid.querySelectorAll("button[data-copy]").forEach(btn => btn.addEventListener("click", () => copy(btn.getAttribute("data-copy"))));
+  }
+
+  function renderRuntime() {
+    const r = state.runtime;
+    if (!r) return;
+    el("runtimeSubtitle").textContent = `Captured: ${r.captured_date} • Host: ${r.host} • Tailscale: ${r.tailscale_ip}`;
+
+    // Services table
+    const svcRows = (r.services || []).map(s => {
+      const ports = s.ports ? s.ports.join(", ") : (s.port_host ? String(s.port_host) : "");
+      const url = s.url ? `<a href="${escapeHtml(s.url)}" target="_blank" rel="noreferrer">${escapeHtml(s.url)}</a>` : "";
+      const health = s.health ? `<code>${escapeHtml(s.health)}</code>` : "";
+      const compose = (r.compose_stacks || []).find(cs => cs.name === s.stack);
+      const composeFiles = compose ? compose.compose_files.join("<br/>") : "";
+      return `<tr>
+        <td><b style="color:#e7eef7">${escapeHtml(s.name)}</b><div class="small">${escapeHtml(s.kind || "")}</div></td>
+        <td><code>${escapeHtml(s.container || "")}</code><div class="small">${escapeHtml(s.stack || "")}</div></td>
+        <td><code>${escapeHtml(ports)}</code></td>
+        <td>${url}<div class="small">${health}</div></td>
+        <td>${composeFiles ? `<div class="small">${composeFiles}</div>` : `<span class="small">—</span>`}</td>
+      </tr>`;
+    }).join("");
+
+    el("runtimeServices").innerHTML = `<table>
+      <thead><tr><th>Service</th><th>Container / Stack</th><th>Ports</th><th>URL / Health</th><th>Compose Files</th></tr></thead>
+      <tbody>${svcRows}</tbody>
+    </table>`;
+
+    // Stacks
+    const stackRows = (r.compose_stacks || []).map(cs => {
+      return `<tr>
+        <td><b style="color:#e7eef7">${escapeHtml(cs.name)}</b></td>
+        <td>${escapeHtml(String(cs.running || ""))}</td>
+        <td>${(cs.compose_files||[]).map(f=>`<code>${escapeHtml(f)}</code>`).join("<br/>")}</td>
+      </tr>`;
+    }).join("");
+
+    el("runtimeStacks").innerHTML = `<table>
+      <thead><tr><th>Stack</th><th>Running</th><th>Compose Files</th></tr></thead>
+      <tbody>${stackRows}</tbody>
+    </table>`;
+
+    // Host services
+    const hostRows = (r.host_services || []).map(h => `<tr>
+      <td><b style="color:#e7eef7">${escapeHtml(h.name)}</b></td>
+      <td><code>${escapeHtml(String(h.port||""))}</code></td>
+      <td><code>${escapeHtml(h.cmd||"")}</code><div class="small">${escapeHtml(h.note||"")}</div></td>
+    </tr>`).join("");
+
+    el("runtimeHost").innerHTML = `<table>
+      <thead><tr><th>Service</th><th>Port</th><th>Command</th></tr></thead>
+      <tbody>${hostRows || "<tr><td colspan=\"3\"><span class=\"small\">—</span></td></tr>"}</tbody>
+    </table>`;
+
+    el("runtimeMeta").textContent = `${(r.services||[]).length} services • ${(r.compose_stacks||[]).length} stacks`;
+  }
+
+  function setTab(which) {
+    const isCatalog = which === "catalog";
+    el("tabCatalog").classList.toggle("active", isCatalog);
+    el("tabRuntime").classList.toggle("active", !isCatalog);
+    el("catalogView").style.display = isCatalog ? "block" : "none";
+    el("runtimeView").style.display = isCatalog ? "none" : "block";
+    el("catalogControls").style.display = isCatalog ? "block" : "none";
+    el("runtimeControls").style.display = isCatalog ? "none" : "block";
+    if (!isCatalog) renderRuntime();
+  }
+
+  function bind() {
+    el("tabCatalog").addEventListener("click", ()=>setTab("catalog"));
+    el("tabRuntime").addEventListener("click", ()=>setTab("runtime"));
+
+    el("q").addEventListener("input", (e)=>{ state.q = e.target.value; renderCatalog(); });
+    el("status").addEventListener("change", (e)=>{ state.status = e.target.value; renderCatalog(); });
+    el("domain").addEventListener("change", (e)=>{ state.domain = e.target.value; renderCatalog(); });
+    el("runmode").addEventListener("change", (e)=>{ state.runmode = e.target.value; renderCatalog(); });
+    el("sort").addEventListener("change", (e)=>{ state.sort = e.target.value; renderCatalog(); });
+    el("dupesOnly").addEventListener("change", (e)=>{ state.dupesOnly = e.target.checked; renderCatalog(); });
+    el("hideDupes").addEventListener("change", (e)=>{ state.hideDupes = e.target.checked; renderCatalog(); });
+    el("onlyActive").addEventListener("change", (e)=>{ state.onlyActive = e.target.checked; renderCatalog(); });
+
+    el("reset").addEventListener("click", ()=>{
+      state.q=""; state.status="All"; state.domain="All"; state.runmode="All"; state.sort="name_asc";
+      state.dupesOnly=false; state.hideDupes=false; state.onlyActive=false;
+      el("q").value=""; el("status").value="All"; el("domain").value="All"; el("runmode").value="All"; el("sort").value="name_asc";
+      el("dupesOnly").checked=false; el("hideDupes").checked=false; el("onlyActive").checked=false;
+      renderCatalog();
+    });
+  }
+
+  async function init() {
+    const [appsRes, rtRes] = await Promise.all([fetch("./apps.json"), fetch("./runtime.json")]);
+    state.apps = await appsRes.json();
+    state.runtime = await rtRes.json();
+
+    setOptions(el("status"), uniq(state.apps.map(a=>a.status)));
+    setOptions(el("domain"), uniq(state.apps.map(a=>a.domain)));
+    setOptions(el("runmode"), uniq(state.apps.map(a=>a.run_mode)));
+
+    bind();
+    renderCatalog();
+    renderRuntime();
+  }
+
+  init().catch(err => {
+    el("meta").textContent = "Failed to load apps.json/runtime.json. Serve this folder via a web server (not file://).";
+    console.error(err);
+  });
+</script>
+</body>
+</html>
